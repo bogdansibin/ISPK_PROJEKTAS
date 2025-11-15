@@ -2,7 +2,11 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <application
+
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -12,15 +16,36 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.ISPK_PROJEKTAS"
         tools:targetApi="31">
+
+        <meta-data
+            android:name="com.google.android.geo.API_KEY"
+            android:value="AIzaSyDNrHk7RkEPZs1N17uTkICWBYKMAiD5cSQ" />
+
+        <!-- Pagrindinis langas su mygtukais Login/Register -->
         <activity
             android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <activity android:name=".CompleteProfileActivity" />
+
+        <!-- Login langas (be LAUNCHER, paleidžiamas tik per Intent) -->
+        <activity
+            android:name=".LoginActivity"
+            android:exported="true" />
+
+        <!-- >>> ČIA BUVO TRŪKSTAMA DALIS <<< -->
+        <activity
+            android:name=".RegisterActivity"
+            android:exported="true" />
+
+        <activity android:name=".MapActivity" />
+
+
     </application>
 
 </manifest>
