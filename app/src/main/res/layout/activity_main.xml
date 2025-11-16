@@ -6,6 +6,16 @@
     android:layout_height="match_parent"
     android:background="@drawable/bg_auth_gradient">
 
+    <ImageView
+        android:id="@+id/logoImage"
+        android:layout_width="240dp"
+        android:layout_height="240dp"
+        android:layout_marginTop="8dp"
+        android:src="@drawable/logo"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
+
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/authCard"
         android:layout_width="0dp"
@@ -26,7 +36,7 @@
             android:layout_height="wrap_content">
 
             <TextView
-                android:text="NewsMap"
+                android:text="Žinių žemėlapis"
                 android:textSize="32sp"
                 android:textStyle="bold"
                 android:textColor="@android:color/black"
@@ -35,7 +45,7 @@
                 android:layout_height="wrap_content"/>
 
             <TextView
-                android:text="Regional news. Instantly."
+                android:text="Lietuvos regioninės žinios!"
                 android:textColor="#555"
                 android:textSize="14sp"
                 android:layout_width="wrap_content"
@@ -43,7 +53,7 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/loginButtonMain"
-                android:text="Login"
+                android:text="Prisijungti"
                 android:layout_marginTop="24dp"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"/>
@@ -51,7 +61,7 @@
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/registerButtonMain"
                 style="?attr/materialButtonOutlinedStyle"
-                android:text="Register"
+                android:text="Registruotis"
                 android:layout_marginTop="12dp"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"/>
