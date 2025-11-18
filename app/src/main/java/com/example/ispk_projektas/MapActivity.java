@@ -1,7 +1,8 @@
-package com.example.ispk_projektas; // <-- change to your real package
+package com.example.ispk_projektas;
 
 import android.Manifest;
-import android.content.Intent;
+import android.content.DialogInterface; // ADDED
+import android.content.Intent; // ADDED
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.content.res.Resources;
@@ -9,9 +10,11 @@ import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Button;
+import android.widget.TextView; // ADDED
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog; // ADDED
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -24,6 +27,7 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.android.gms.maps.model.Polygon;
 import com.google.android.gms.maps.model.PolygonOptions;
+import com.google.firebase.auth.FirebaseAuth; // ADDED
 import com.google.maps.android.data.Feature;
 import com.google.maps.android.data.geojson.GeoJsonFeature;
 import com.google.maps.android.data.geojson.GeoJsonLayer;
@@ -46,16 +50,33 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private Polygon selectedPolygon;
     private Button btnF;
 
+    // 🌟 ADDED: For Session and UI
+    private FirebaseAuth auth;
+    private TextView userInfoTextView;
+
+    private Button logoutButton;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_map); // must contain a SupportMapFragment with @+id/map
+        // NOTE: activity_map XML needs adjustment to include TextView
+        setContentView(R.layout.activity_map);
+
+        // Initialize Firebase Auth
+        auth = FirebaseAuth.getInstance();
+
         String role = getIntent().getStringExtra("role");
         String nickname = getIntent().getStringExtra("nickname");
-        boolean isAdmin = "admin".equals(role);
 
-        // Example: log or toast to see it works
-        Toast.makeText(this, "Hello " + nickname + " (" + role + ")", Toast.LENGTH_SHORT).show();
+        // --- DISPLAY USER INFO ---
+        userInfoTextView = findViewById(R.id.userInfoTextView);
+        if (userInfoTextView != null) {
+            userInfoTextView.setText("Logged in as: " + nickname + " (" + role + ")");
+        }
+        // Initial toast removed for a persistent display
+        logoutButton = findViewById(R.id.logoutButtonn);
+        logoutButton.setOnClickListener(v -> performLogout());
+
         SupportMapFragment mapFragment =
                 (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
         if (mapFragment != null) {
@@ -98,11 +119,48 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         loadAndStyleCounties();
     }
 
+    // --- LOGOUT AND BACK PRESS LOGIC ---
+
+    /**
+     * Override the back button press to prompt for logout.
+     */
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        showLogoutConfirmationDialog();
+    }
+
+    private void showLogoutConfirmationDialog() {
+        new AlertDialog.Builder(this)
+                .setTitle("Log Out")
+                .setMessage("Are you sure you want to log out and return to the login screen?")
+                .setPositiveButton("Log Out", (dialog, which) -> {
+                    performLogout();
+                })
+                .setNegativeButton("Cancel", (dialog, which) -> {
+                    dialog.dismiss();
+                })
+                .show();
+    }
+
+
+    private void performLogout() {
+        auth.signOut(); // Firebase sign out
+        Toast.makeText(this, "Successfully logged out.", Toast.LENGTH_SHORT).show();
+
+        // Redirect to LoginActivity and clear the back stack
+        Intent intent = new Intent(MapActivity.this, LoginActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        finish();
+    }
+
+    // --- EXISTING METHODS BELOW ---
+
     private void applyMapStyleBasedOnSystemTheme() {
         int currentNightMode = getResources().getConfiguration().uiMode
                 & Configuration.UI_MODE_NIGHT_MASK;
         boolean isNightModeActive = currentNightMode == Configuration.UI_MODE_NIGHT_YES;
-
     }
 
     private void loadAndStyleCounties() {
@@ -127,7 +185,6 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                     GeoJsonFeature geoJsonFeature = (GeoJsonFeature) feature;
                     selectedFeature = geoJsonFeature;
 
-                    // name: use "name:lt" if present, otherwise "name"
                     String countyName =
                             geoJsonFeature.getProperty("name:lt") != null ?
                                     geoJsonFeature.getProperty("name:lt") :
@@ -141,18 +198,16 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                         selectedPolygon = null;
                     }
 
-                    // highlight current polygon – manually draw it with PolygonOptions
                     if (geoJsonFeature.getGeometry() instanceof GeoJsonPolygon) {
                         GeoJsonPolygon polygon =
                                 (GeoJsonPolygon) geoJsonFeature.getGeometry();
-                        // first ring = outer boundary
                         List<LatLng> outerBoundary = polygon.getCoordinates().get(0);
 
                         PolygonOptions polygonOptions = new PolygonOptions()
                                 .addAll(outerBoundary)
-                                .strokeColor(0xFF0000FF) // strong blue outline
+                                .strokeColor(0xFF0000FF)
                                 .strokeWidth(3f)
-                                .fillColor(0x88006400);  // darker green for selection
+                                .fillColor(0x88006400);
 
                         selectedPolygon = mMap.addPolygon(polygonOptions);
                     }
@@ -174,7 +229,6 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         }
     }
 
-    // If you keep the location permission logic, you can still override onRequestPermissionsResult
     @Override
     public void onRequestPermissionsResult(int requestCode,
                                            @NonNull String[] permissions,
