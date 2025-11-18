@@ -48,6 +48,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private GeoJsonLayer countiesLayer;
     private GeoJsonFeature selectedFeature;
     private Polygon selectedPolygon;
+    private Button btnF;
 
     // 🌟 ADDED: For Session and UI
     private FirebaseAuth auth;
@@ -81,6 +82,17 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         if (mapFragment != null) {
             mapFragment.getMapAsync(this);
         }
+        btnF = findViewById(R.id.btn_f);
+
+        btnF.setOnClickListener(v -> openForum());
+
+    }
+
+    public void openForum()
+    {
+        Intent intent = new Intent(MapActivity.this, Forum.class);
+        startActivity(intent);
+
     }
 
     @Override
