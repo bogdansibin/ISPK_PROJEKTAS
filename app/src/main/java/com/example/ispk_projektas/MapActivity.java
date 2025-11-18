@@ -1,12 +1,14 @@
 package com.example.ispk_projektas; // <-- change to your real package
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.content.res.Resources;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.Button;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -42,6 +44,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private GeoJsonLayer countiesLayer;
     private GeoJsonFeature selectedFeature;
     private Polygon selectedPolygon;
+    private Button btnF;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,6 +61,17 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         if (mapFragment != null) {
             mapFragment.getMapAsync(this);
         }
+        btnF = findViewById(R.id.btn_f);
+
+        btnF.setOnClickListener(v -> openForum());
+
+    }
+
+    public void openForum()
+    {
+        Intent intent = new Intent(MapActivity.this, Forum.class);
+        startActivity(intent);
+
     }
 
     @Override
