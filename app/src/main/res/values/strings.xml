@@ -4,4 +4,23 @@
         <item>User</item>
         <item>Admin</item> <!-- for project/demo purposes -->
     </string-array>
+    <string name="login_failed">"Login failed"</string>
+    <string-array name="kategorijos">
+        <item>Lietuva</item>
+        <item>Pasaulis</item>
+        <item>Politika</item>
+        <item>Ekonomika ir verslas</item>
+        <item>Technologijos ir mokslas</item>
+        <item>Sportas</item>
+        <item>Kultūra ir pramogos</item>
+        <item>Sveikata ir gyvenimo būdas</item>
+        <item>Nuomonės ir komentarai</item>
+        <item>Įvykiai regione</item>
+        <item>Kita</item>
+    </string-array>
+    <string-array name="filter_items">
+        <item>Filtruoti pagal kategorijas</item>
+        <item>Filtruoti pagal datą</item>
+        <item>Rodyti tik mano įrašus</item>
+    </string-array>
 </resources>
