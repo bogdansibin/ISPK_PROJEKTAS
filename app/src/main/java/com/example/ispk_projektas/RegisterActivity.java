@@ -5,8 +5,6 @@ import android.os.Bundle;
 import android.text.TextUtils;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.Spinner;
-import android.widget.ArrayAdapter;
 import android.widget.Toast;
 
 import androidx.annotation.NonNull;
@@ -17,7 +15,6 @@ import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.api.ApiException;
-import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.AuthResult;
@@ -36,7 +33,6 @@ public class RegisterActivity extends AppCompatActivity {
     private static final int RC_GOOGLE_REGISTER = 9002;
 
     private EditText nicknameEditText, emailEditText, passwordEditText;
-    private Spinner roleSpinner;
     private Button registerButton;
     private Button googleRegisterButton;
 
@@ -59,19 +55,8 @@ public class RegisterActivity extends AppCompatActivity {
         registerButton = findViewById(R.id.register_button);
         googleRegisterButton = findViewById(R.id.googleRegisterButton);
 
-        // Spinner: "User" / "Admin"
-        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(
-                this,
-                R.array.roles_array,
-                android.R.layout.simple_spinner_item
-        );
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        roleSpinner.setAdapter(adapter);
-
-        // Email/password register
         registerButton.setOnClickListener(v -> registerNewUser());
 
-        // Google sign-up
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestIdToken(getString(R.string.default_web_client_id))
                 .requestEmail()
@@ -86,8 +71,6 @@ public class RegisterActivity extends AppCompatActivity {
         String nickname = nicknameEditText.getText().toString().trim();
         String email = emailEditText.getText().toString().trim();
         String password = passwordEditText.getText().toString().trim();
-
-        String role;
 
         if (TextUtils.isEmpty(nickname)) {
             nicknameEditText.setError("Enter nickname");
@@ -125,13 +108,14 @@ public class RegisterActivity extends AppCompatActivity {
                         Map<String, Object> userData = new HashMap<>();
                         userData.put("nickname", nickname);
                         userData.put("email", email);
-                        userData.put("role", "user"); // ← FIXED
+                        userData.put("role", "user");
                         userData.put("createdAt", FieldValue.serverTimestamp());
 
                         db.collection("users").document(uid)
                                 .set(userData)
                                 .addOnSuccessListener(unused -> {
                                     Toast.makeText(this, "Registered!", Toast.LENGTH_SHORT).show();
+                                    // No need for CLEAR_TASK here, it's a natural transition
                                     startActivity(new Intent(this, LoginActivity.class));
                                     finish();
                                 })
@@ -175,7 +159,6 @@ public class RegisterActivity extends AppCompatActivity {
 
     private void firebaseRegisterWithGoogle(String idToken) {
 
-        // 1. ALWAYS assign role first (no spinner, no admin)
         final String role = "user";
 
         AuthCredential credential = GoogleAuthProvider.getCredential(idToken, null);
@@ -192,35 +175,64 @@ public class RegisterActivity extends AppCompatActivity {
                             return;
                         }
 
-                        String nickname = user.getDisplayName() != null ? user.getDisplayName() : "";
-                        String email = user.getEmail() != null ? user.getEmail() : "";
-
-                        Map<String, Object> userData = new HashMap<>();
-                        userData.put("nickname", "");  // force user to choose nickname later
-                        userData.put("email", email);
-                        userData.put("role", role);
-                        userData.put("createdAt", FieldValue.serverTimestamp());
-
-                        db.collection("users")
-                                .document(user.getUid())
-                                .set(userData)
-                                .addOnSuccessListener(aVoid -> {
-
-                                    Toast.makeText(RegisterActivity.this,
-                                            "Registration with Google successful!",
-                                            Toast.LENGTH_LONG).show();
-
-                                    // 2. Now safely use 'role'
-                                    Intent intent = new Intent(RegisterActivity.this, NicknameActivity.class);
-                                    intent.putExtra("role", role);
-                                    startActivity(intent);
-                                    finish();
-                                })
-                                .addOnFailureListener(e ->
+                        // Check if the user already exists in Firestore (optional, but robust)
+                        db.collection("users").document(user.getUid()).get()
+                                .addOnSuccessListener(documentSnapshot -> {
+                                    if (documentSnapshot.exists()) {
+                                        // User already exists (e.g., they logged in once before), redirect directly
                                         Toast.makeText(RegisterActivity.this,
-                                                "User registered but saving profile failed: " + e.getMessage(),
-                                                Toast.LENGTH_LONG).show()
-                                );
+                                                "Account already exists. Logging in.",
+                                                Toast.LENGTH_LONG).show();
+
+                                        // Get existing data
+                                        String existingRole = documentSnapshot.getString("role");
+                                        String existingNickname = documentSnapshot.getString("nickname");
+
+                                        // Redirect based on nickname availability
+                                        if (existingNickname == null || existingNickname.isEmpty()) {
+                                            Intent intent = new Intent(RegisterActivity.this, NicknameActivity.class);
+                                            intent.putExtra("role", existingRole);
+                                            startActivity(intent);
+                                        } else {
+                                            Intent intent = new Intent(RegisterActivity.this, MapActivity.class);
+                                            intent.putExtra("role", existingRole);
+                                            intent.putExtra("nickname", existingNickname);
+                                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                                            startActivity(intent);
+                                        }
+                                        finish();
+                                    } else {
+                                        // First time Google registration -> Create profile
+                                        String email = user.getEmail() != null ? user.getEmail() : "";
+
+                                        Map<String, Object> userData = new HashMap<>();
+                                        userData.put("nickname", "");  // force user to choose nickname later
+                                        userData.put("email", email);
+                                        userData.put("role", role);
+                                        userData.put("createdAt", FieldValue.serverTimestamp());
+
+                                        db.collection("users")
+                                                .document(user.getUid())
+                                                .set(userData)
+                                                .addOnSuccessListener(aVoid -> {
+
+                                                    Toast.makeText(RegisterActivity.this,
+                                                            "Registration with Google successful! Please set a nickname.",
+                                                            Toast.LENGTH_LONG).show();
+
+                                                    // Redirect to Nickname setup
+                                                    Intent intent = new Intent(RegisterActivity.this, NicknameActivity.class);
+                                                    intent.putExtra("role", role);
+                                                    startActivity(intent);
+                                                    finish();
+                                                })
+                                                .addOnFailureListener(e ->
+                                                        Toast.makeText(RegisterActivity.this,
+                                                                "User registered but saving profile failed: " + e.getMessage(),
+                                                                Toast.LENGTH_LONG).show()
+                                                );
+                                    }
+                                });
 
                     } else {
                         Toast.makeText(this,
@@ -229,5 +241,4 @@ public class RegisterActivity extends AppCompatActivity {
                     }
                 });
     }
-
 }

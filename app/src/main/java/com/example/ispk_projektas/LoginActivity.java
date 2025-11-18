@@ -18,6 +18,7 @@ import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.GoogleAuthProvider;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FieldValue;
 import com.google.firebase.firestore.FirebaseFirestore;
 
@@ -45,6 +46,13 @@ public class LoginActivity extends AppCompatActivity {
         auth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
 
+        // 🌟 SESSION CHECK: If user is already logged in, skip login screen
+        FirebaseUser currentUser = auth.getCurrentUser();
+        if (currentUser != null) {
+            checkProfileAndRedirect(currentUser.getUid());
+            return;
+        }
+
         emailEditText = findViewById(R.id.emailEditText);
         passwordEditText = findViewById(R.id.passwordEditText);
         loginButton = findViewById(R.id.loginButton);
@@ -67,6 +75,42 @@ public class LoginActivity extends AppCompatActivity {
         googleSignInButton.setOnClickListener(v -> signInWithGoogle());
     }
 
+    /**
+     * Helper function to fetch user profile and redirect to MapActivity or NicknameActivity.
+     */
+    private void checkProfileAndRedirect(String uid) {
+        db.collection("users").document(uid)
+                .get()
+                .addOnSuccessListener(doc -> {
+                    String nickname = doc.getString("nickname");
+                    String role = doc.getString("role");
+
+                    if (nickname == null) nickname = "";
+                    if (role == null) role = "user";
+
+                    if (nickname.isEmpty()) {
+                        // Go to nickname screen if missing (e.g., first Google login)
+                        Intent i = new Intent(LoginActivity.this, NicknameActivity.class);
+                        i.putExtra("role", role);
+                        startActivity(i);
+                        finish();
+                    } else {
+                        // Go straight to MapActivity
+                        Intent intent = new Intent(LoginActivity.this, MapActivity.class);
+                        intent.putExtra("nickname", nickname);
+                        intent.putExtra("role", role);
+                        // 🌟 IMPORTANT: Clear the back stack
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                        startActivity(intent);
+                        finish();
+                    }
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "Failed to load user profile. Please log in again.", Toast.LENGTH_LONG).show();
+                    auth.signOut(); // Force sign out if profile retrieval fails critically
+                });
+    }
+
     private void loginUser() {
         String email = emailEditText.getText().toString().trim();
         String password = passwordEditText.getText().toString().trim();
@@ -77,27 +121,8 @@ public class LoginActivity extends AppCompatActivity {
                         FirebaseUser firebaseUser = auth.getCurrentUser();
                         if (firebaseUser == null) return;
 
-                        String uid = firebaseUser.getUid();
-                        FirebaseFirestore db = FirebaseFirestore.getInstance();
-
-                        db.collection("users").document(uid)
-                                .get()
-                                .addOnSuccessListener(doc -> {
-                                    String nickname = doc.getString("nickname");
-                                    String role = doc.getString("role");
-
-                                    if (nickname == null) nickname = "";
-                                    if (role == null) role = "user";
-
-                                    Intent intent = new Intent(LoginActivity.this, MapActivity.class);
-                                    intent.putExtra("nickname", nickname);
-                                    intent.putExtra("role", role);
-                                    startActivity(intent);
-                                    finish();
-                                })
-                                .addOnFailureListener(e -> {
-                                    Toast.makeText(this, "Failed to load user profile", Toast.LENGTH_LONG).show();
-                                });
+                        // 🌟 Use the helper method after successful authentication
+                        checkProfileAndRedirect(firebaseUser.getUid());
 
                     } else {
                         Toast.makeText(this,
@@ -157,20 +182,17 @@ public class LoginActivity extends AppCompatActivity {
                                 .addOnSuccessListener(documentSnapshot -> {
                                     String role = "user";
                                     String nickname = "";
+                                    String email = user.getEmail() != null ? user.getEmail() : "";
 
                                     if (documentSnapshot.exists()) {
-                                        if (documentSnapshot.getString("role") != null) {
-                                            role = documentSnapshot.getString("role");
-                                        }
-                                        if (documentSnapshot.getString("nickname") != null) {
-                                            nickname = documentSnapshot.getString("nickname");
-                                        }
+                                        // User exists in Firestore -> Load profile
+                                        DocumentSnapshot doc = documentSnapshot;
+                                        role = doc.getString("role") != null ? doc.getString("role") : "user";
+                                        nickname = doc.getString("nickname") != null ? doc.getString("nickname") : "";
                                     } else {
                                         // First time Google login -> create profile with empty nickname
-                                        String email = user.getEmail() != null ? user.getEmail() : "";
-
                                         Map<String, Object> userData = new HashMap<>();
-                                        userData.put("nickname", ""); // user will set it next screen
+                                        userData.put("nickname", "");
                                         userData.put("email", email);
                                         userData.put("role", role);
                                         userData.put("createdAt", FieldValue.serverTimestamp());
@@ -180,24 +202,8 @@ public class LoginActivity extends AppCompatActivity {
                                                 .set(userData);
                                     }
 
-                                    if (nickname == null || nickname.isEmpty()) {
-                                        // Go to nickname screen
-                                        Intent i = new Intent(this, NicknameActivity.class);
-                                        i.putExtra("role", role);
-                                        startActivity(i);
-                                        finish();
-                                    } else {
-                                        // Already has nickname → go straight to map
-                                        Toast.makeText(this,
-                                                "Login with Google successful (" + role + ")",
-                                                Toast.LENGTH_LONG).show();
-
-                                        Intent intent = new Intent(this, MapActivity.class);
-                                        intent.putExtra("role", role);
-                                        intent.putExtra("nickname", nickname);
-                                        startActivity(intent);
-                                        finish();
-                                    }
+                                    // 🌟 Use the helper method to handle redirection
+                                    checkProfileAndRedirect(user.getUid());
                                 })
                                 .addOnFailureListener(e -> {
                                     Toast.makeText(this,
