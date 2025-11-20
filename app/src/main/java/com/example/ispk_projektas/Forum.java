@@ -95,6 +95,7 @@ public class Forum extends AppCompatActivity {
                     }
 
                     for (DocumentSnapshot doc : querySnapshot) {
+                        String postId = doc.getId();
                         String title = doc.getString("pavadinimas");
                         String category = doc.getString("kategorija");
                         String content = doc.getString("turinys");
@@ -121,6 +122,16 @@ public class Forum extends AppCompatActivity {
                         textMeta.setText(meta);
 
                         textContent.setText(content != null ? content : "");
+
+                        postView.setOnClickListener(v -> {
+                            Intent intent = new Intent(Forum.this, PostDetailActivity.class);
+                            intent.putExtra("postId", postId);
+                            intent.putExtra("title", title);
+                            intent.putExtra("content", content);
+                            intent.putExtra("category", category);
+                            intent.putExtra("author", author);
+                            startActivity(intent);
+                        });
 
                         postsContainer.addView(postView);
                     }

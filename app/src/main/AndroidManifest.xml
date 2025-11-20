@@ -50,6 +50,7 @@
             android:name=".ArticleWebActivity"
             android:exported="false" />
         <activity android:name=".ProfileActivity"/>
+        <activity android:name=".PostDetailActivity"/>
 
 
 
