@@ -52,7 +52,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
     // 🌟 ADDED: For Session and UI
     private FirebaseAuth auth;
-    private TextView userInfoTextView;
+    private Button userInfoTextView;
 
     private Button logoutButton;
 
@@ -67,12 +67,23 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
         String role = getIntent().getStringExtra("role");
         String nickname = getIntent().getStringExtra("nickname");
+        String email = getIntent().getStringExtra("email");
 
         // --- DISPLAY USER INFO ---
         userInfoTextView = findViewById(R.id.userInfoTextView);
         if (userInfoTextView != null) {
             userInfoTextView.setText("Logged in as: " + nickname + " (" + role + ")");
         }
+
+        userInfoTextView.setOnClickListener(v -> {
+            Intent intent = new Intent(MapActivity.this, ProfileActivity.class);
+
+            // OPTIONAL — pass data if you want to show nickname, role, email
+            intent.putExtra("nickname", nickname);
+            intent.putExtra("role", role);
+
+            startActivity(intent);
+        });
         // Initial toast removed for a persistent display
         logoutButton = findViewById(R.id.logoutButtonn);
         logoutButton.setOnClickListener(v -> performLogout());
@@ -217,6 +228,9 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                             "Selected: " + countyName,
                             Toast.LENGTH_SHORT
                     ).show();
+                    Intent intent = new Intent(MapActivity.this, CountyNewsActivity.class);
+                    intent.putExtra("countyName", countyName);
+                    startActivity(intent);
                 }
             });
 

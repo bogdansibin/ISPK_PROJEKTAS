@@ -5,7 +5,9 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.INTERNET" />
 
+
     <application
+
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -15,22 +17,17 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.ISPK_PROJEKTAS"
         tools:targetApi="31">
-        <activity
-            android:name=".Forum"
-            android:exported="false" />
-        <activity
-            android:name=".CreateForum"
-            android:exported="false" />
 
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyDNrHk7RkEPZs1N17uTkICWBYKMAiD5cSQ" /> <!-- Pagrindinis langas su mygtukais Login/Register -->
+            android:value="AIzaSyDNrHk7RkEPZs1N17uTkICWBYKMAiD5cSQ" />
+
+        <!-- Pagrindinis langas su mygtukais Login/Register -->
         <activity
             android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
@@ -38,11 +35,25 @@
         <!-- Login langas (be LAUNCHER, paleidžiamas tik per Intent) -->
         <activity
             android:name=".LoginActivity"
-            android:exported="true" /> <!-- >>> ČIA BUVO TRŪKSTAMA DALIS <<< -->
+            android:exported="true" />
+
+        <!-- >>> ČIA BUVO TRŪKSTAMA DALIS <<< -->
         <activity
             android:name=".RegisterActivity"
             android:exported="true" />
+
         <activity android:name=".MapActivity" />
+        <activity android:name=".CountyNewsActivity" />
+        <activity android:name=".Forum" />
+        <activity android:name=".CreateForum" />
+        <activity
+            android:name=".ArticleWebActivity"
+            android:exported="false" />
+        <activity android:name=".ProfileActivity"/>
+
+
+
+
     </application>
 
 </manifest>
