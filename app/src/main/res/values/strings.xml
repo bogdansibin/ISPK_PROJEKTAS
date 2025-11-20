@@ -20,7 +20,9 @@
     </string-array>
     <string-array name="filter_items">
         <item>Filtruoti pagal kategorijas</item>
+        <item>Filtruoti pagal raktažodį</item>
         <item>Filtruoti pagal datą</item>
         <item>Rodyti tik mano įrašus</item>
+        <item> Atstatyti filtrus</item>
     </string-array>
 </resources>
