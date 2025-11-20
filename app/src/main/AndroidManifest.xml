@@ -53,6 +53,7 @@
         <activity android:name=".PostDetailActivity"/>
 
 
+        <profileable android:shell="true" />
 
 
     </application>

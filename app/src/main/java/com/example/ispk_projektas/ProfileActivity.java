@@ -1,5 +1,6 @@
 package com.example.ispk_projektas;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.TextView;
@@ -32,9 +33,10 @@ public class ProfileActivity extends AppCompatActivity {
     private TextView savedEmptyTextView;
 
     private ForumPostAdapter forumAdapter;
-    private RecyclerView.Adapter<?> savedAdapter; // paliekam placeholder
-
     private final List<ForumPost> myPosts = new ArrayList<>();
+
+    private NewsAdapter savedArticlesAdapter;
+    private final List<NewsItem> savedArticles = new ArrayList<>();
 
     private FirebaseFirestore db;
 
@@ -74,15 +76,15 @@ public class ProfileActivity extends AppCompatActivity {
         emailTextView.setText(email);
 
         setupRecyclerViews();
-        loadMyForumPosts();   // 👈 čia realiai nuskaitom
-        showSavedArticles(new ArrayList<>()); // dar placeholder
+        loadMyForumPosts();
+        loadSavedArticles();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
-        // jei vartotojas sukūrė naują įrašą, grįžus – sąrašas atsinaujins
         loadMyForumPosts();
+        loadSavedArticles();
     }
 
     private void setupRecyclerViews() {
@@ -92,9 +94,19 @@ public class ProfileActivity extends AppCompatActivity {
         forumAdapter = new ForumPostAdapter(myPosts);
         forumRecyclerView.setAdapter(forumAdapter);
 
-        // kol kas paliekam placeholder adapterį tik „saved“ daliai, jei nori
-        savedAdapter = new PlaceholderAdapter("Saved article item");
-        savedArticlesRecyclerView.setAdapter(savedAdapter);
+        savedArticlesAdapter = new NewsAdapter(
+                this,
+                new ArrayList<>(),   // NE perduodam savedArticles
+                item -> {
+                    Intent intent = new Intent(ProfileActivity.this, ArticleWebActivity.class);
+                    intent.putExtra("url", item.link);
+                    intent.putExtra("title", item.title);
+                    startActivity(intent);
+                }
+        );
+        savedArticlesRecyclerView.setAdapter(savedArticlesAdapter);
+
+        savedArticlesRecyclerView.setAdapter(savedArticlesAdapter);
     }
 
     private void loadMyForumPosts() {
@@ -109,7 +121,6 @@ public class ProfileActivity extends AppCompatActivity {
 
         db.collection("irasai")
                 .whereEqualTo("autoriusId", uid)
-                //.orderBy("sukurta", Query.Direction.DESCENDING) // jei pridėsi indeksą
                 .get()
                 .addOnSuccessListener(querySnapshot -> {
                     List<ForumPost> list = new ArrayList<>();
@@ -149,53 +160,63 @@ public class ProfileActivity extends AppCompatActivity {
         }
     }
 
-    // --- palieku tavo PlaceholderAdapter tik „saved“ daliai ---
-
-    private static class PlaceholderAdapter extends RecyclerView.Adapter<PlaceholderViewHolder> {
-
-        private final String label;
-
-        PlaceholderAdapter(String label) {
-            this.label = label;
+    private void loadSavedArticles() {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null) {
+            showSavedArticles(new ArrayList<>());
+            return;
         }
 
-        @Override
-        public PlaceholderViewHolder onCreateViewHolder(android.view.ViewGroup parent, int viewType) {
-            TextView tv = new TextView(parent.getContext());
-            tv.setPadding(16, 16, 16, 16);
-            tv.setTextSize(14);
-            return new PlaceholderViewHolder(tv);
-        }
+        String uid = user.getUid();
 
-        @Override
-        public void onBindViewHolder(PlaceholderViewHolder holder, int position) {
-            holder.textView.setText(label + " #" + (position + 1));
-        }
+        db.collection("users")
+                .document(uid)
+                .collection("favorites")
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    List<NewsItem> list = new ArrayList<>();
+                    for (QueryDocumentSnapshot doc : querySnapshot) {
+                        String title = doc.getString("title");
+                        String link = doc.getString("link");
+                        String description = doc.getString("description");
+                        Long pubDateMillis = doc.getLong("pubDateMillis");
 
-        @Override
-        public int getItemCount() {
-            return 0;
-        }
+                        if (title == null) title = "";
+                        if (link == null) link = "";
+                        if (description == null) description = "";
+                        long pubMillis = (pubDateMillis != null) ? pubDateMillis : 0L;
+
+                        NewsItem item = new NewsItem(title, link, description, pubMillis);
+                        item.isFavorite = true;
+                        list.add(item);
+                    }
+                    showSavedArticles(list);
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this,
+                            "Klaida skaitant išsaugotus straipsnius: " + e.getMessage(),
+                            Toast.LENGTH_LONG).show();
+                    showSavedArticles(new ArrayList<>());
+                });
     }
 
-    private static class PlaceholderViewHolder extends RecyclerView.ViewHolder {
-        TextView textView;
-
-        PlaceholderViewHolder(TextView itemView) {
-            super(itemView);
-            textView = itemView;
-        }
-    }
-
-    // savedArticles – kol kas dar neužkraunam iš Firestore
-    private void showSavedArticles(List<Object> items) {
+    private void showSavedArticles(List<NewsItem> items) {
         if (items == null || items.isEmpty()) {
             savedEmptyTextView.setVisibility(View.VISIBLE);
             savedArticlesRecyclerView.setVisibility(View.GONE);
         } else {
             savedEmptyTextView.setVisibility(View.GONE);
             savedArticlesRecyclerView.setVisibility(View.VISIBLE);
-            // TODO: real data later
         }
+
+        // jei tau dar reikia savedArticles lauko – laikom kopiją
+        savedArticles.clear();
+        if (items != null) {
+            savedArticles.addAll(items);
+        }
+
+        // į adapterį paduodam NAUJĄ list'ą, ne tą patį savedArticles
+        savedArticlesAdapter.updateData(new ArrayList<>(savedArticles));
     }
+
 }

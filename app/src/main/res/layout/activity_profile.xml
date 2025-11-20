@@ -5,22 +5,29 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <!-- Top app bar -->
-    <com.google.android.material.appbar.MaterialToolbar
-        android:id="@+id/profileToolbar"
+    <!-- App bar su Toolbar viduje -->
+    <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/appBarLayout"
         android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize"
-        android:background="?attr/colorPrimary"
-        android:theme="@style/ThemeOverlay.MaterialComponents.Dark.ActionBar"
-        app:navigationIcon="@drawable/arrow_back"
-        app:title="Profile"/>  <!-- create vector arrow_back -->
+        android:layout_height="wrap_content"
+        android:theme="@style/ThemeOverlay.MaterialComponents.Dark.ActionBar">
 
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/profileToolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            android:background="?attr/colorPrimary"
+            app:navigationIcon="@drawable/arrow_back"
+            app:title="Profilis" />
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <!-- Turinio dalis po AppBar -->
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:fillViewport="true"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior"
-        android:padding="16dp">
+        android:padding="16dp"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -36,35 +43,58 @@
                 app:cardCornerRadius="16dp"
                 app:cardElevation="4dp">
 
+                <!-- Horizontal: ikona kairėje, tekstas dešinėje -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
+                    android:orientation="horizontal"
+                    android:padding="16dp"
+                    android:gravity="center_vertical">
 
-                    <TextView
-                        android:id="@+id/profileNicknameTextView"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Vartotojo slapyvardis"
-                        android:textStyle="bold"
-                        android:textSize="20sp" />
+                    <!-- Vartotojo ikona -->
+                    <ImageView
+                        android:id="@+id/profileAvatarImageView"
+                        android:layout_width="64dp"
+                        android:layout_height="64dp"
+                        android:src="@drawable/icon"
+                        android:contentDescription="Vartotojo ikona"
+                        android:padding="4dp"
+                        android:scaleType="centerCrop" /> <!-- susikurk vektorių -->
 
-                    <TextView
-                        android:id="@+id/profileRoleTextView"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Vaidmuo: user"
-                        android:layout_marginTop="4dp"
-                        android:textSize="14sp" />
 
-                    <TextView
-                        android:id="@+id/profileEmailTextView"
-                        android:layout_width="wrap_content"
+                    <!-- Tekstas šalia ikonos -->
+                    <LinearLayout
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:text="el. paštas"
-                        android:layout_marginTop="4dp"
-                        android:textSize="14sp" />
+                        android:layout_marginStart="16dp"
+                        android:orientation="vertical"
+                        android:layout_weight="1">
+
+                        <TextView
+                            android:id="@+id/profileNicknameTextView"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Vartotojo slapyvardis"
+                            android:textStyle="bold"
+                            android:textSize="20sp" />
+
+                        <TextView
+                            android:id="@+id/profileRoleTextView"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Vaidmuo: user"
+                            android:layout_marginTop="4dp"
+                            android:textSize="14sp" />
+
+                        <TextView
+                            android:id="@+id/profileEmailTextView"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="el. paštas"
+                            android:layout_marginTop="4dp"
+                            android:textSize="14sp" />
+
+                    </LinearLayout>
 
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>

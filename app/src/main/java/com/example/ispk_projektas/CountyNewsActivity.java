@@ -2,16 +2,15 @@ package com.example.ispk_projektas;
 
 import android.app.DatePickerDialog;
 import android.content.Intent;
-import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.DatePicker;
 import android.widget.Spinner;
-import android.widget.ArrayAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -23,6 +22,10 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.appbar.MaterialToolbar;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserFactory;
@@ -61,6 +64,13 @@ public class CountyNewsActivity extends AppCompatActivity {
     private Long toDateMillis = null;
     private String selectedCategory = ""; // "" = Visos
 
+    // Firebase
+    private FirebaseFirestore db;
+    private FirebaseAuth auth;
+
+    // saugom favorites linkus
+    private final List<String> favoriteLinks = new ArrayList<>();
+
     // Category list
     private final String[] CATEGORIES = new String[]{
             "Visos",
@@ -77,6 +87,9 @@ public class CountyNewsActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_news_county);
 
+        auth = FirebaseAuth.getInstance();
+        db = FirebaseFirestore.getInstance();
+
         countyName = getIntent().getStringExtra("countyName");
         if (countyName == null) countyName = "Nežinoma apskritis";
 
@@ -86,16 +99,21 @@ public class CountyNewsActivity extends AppCompatActivity {
         if (getSupportActionBar() != null) {
             getSupportActionBar().setTitle(countyName);
         }
+        toolbar.setNavigationOnClickListener(v -> onBackPressed());
 
         // RecyclerView
         newsRecyclerView = findViewById(R.id.newsRecyclerView);
         newsRecyclerView.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new NewsAdapter(new ArrayList<>(), item -> {
-            Intent intent = new Intent(CountyNewsActivity.this, ArticleWebActivity.class);
-            intent.putExtra("url", item.link);
-            intent.putExtra("title", item.title);
-            startActivity(intent);
-        });
+        adapter = new NewsAdapter(
+                this,
+                new ArrayList<>(),
+                item -> {
+                    Intent intent = new Intent(CountyNewsActivity.this, ArticleWebActivity.class);
+                    intent.putExtra("url", item.link);
+                    intent.putExtra("title", item.title);
+                    startActivity(intent);
+                }
+        );
         newsRecyclerView.setAdapter(adapter);
 
         // Load news with default filters (no category, no date)
@@ -168,12 +186,9 @@ public class CountyNewsActivity extends AppCompatActivity {
                 .setPositiveButton("Taikyti", (dialog, which) -> {
                     String chosenCategory = (String) categorySpinner.getSelectedItem();
                     selectedCategory = chosenCategory.equals("Visos") ? "" : chosenCategory;
-
-                    // Re-load feed and then apply filters
                     fetchNews();
                 })
                 .setNegativeButton("Atstatyti", (dialog, which) -> {
-                    // Reset filters
                     selectedCategory = "";
                     fromDateMillis = null;
                     toDateMillis = null;
@@ -289,7 +304,49 @@ public class CountyNewsActivity extends AppCompatActivity {
 
             Log.d(TAG, "parseRss returned items: " + newsItems.size());
             allItems = newsItems;
+
+            // 👇 užkraunam favorites iš Firestore ir tik tada rodome
+            loadFavoritesAndShow();
+        }
+    }
+
+    /** Nuskaitom favorites iš Firestore ir pažymime allItems */
+    private void loadFavoritesAndShow() {
+        FirebaseUser user = auth.getCurrentUser();
+        if (user == null) {
+            favoriteLinks.clear();
+            applyFavoritesToItems();
             applyFiltersAndShow();
+            return;
+        }
+
+        String uid = user.getUid();
+        db.collection("users")
+                .document(uid)
+                .collection("favorites")
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    favoriteLinks.clear();
+                    for (QueryDocumentSnapshot doc : querySnapshot) {
+                        String link = doc.getString("link");
+                        if (link != null) {
+                            favoriteLinks.add(link);
+                        }
+                    }
+                    applyFavoritesToItems();
+                    applyFiltersAndShow();
+                })
+                .addOnFailureListener(e -> {
+                    Log.e(TAG, "Klaida nuskaitant favorites: ", e);
+                    applyFavoritesToItems();
+                    applyFiltersAndShow();
+                });
+    }
+
+    /** pažymim allItems pagal favoriteLinks */
+    private void applyFavoritesToItems() {
+        for (NewsItem item : allItems) {
+            item.isFavorite = favoriteLinks.contains(item.link);
         }
     }
 
@@ -340,7 +397,7 @@ public class CountyNewsActivity extends AppCompatActivity {
                         } else if ("link".equalsIgnoreCase(name)) {
                             link = xpp.nextText();
                         } else if ("description".equalsIgnoreCase(name)) {
-                            description = xpp.nextText(); // we parse but don't show it
+                            description = xpp.nextText();
                         } else if ("pubDate".equalsIgnoreCase(name)) {
                             pubDateStr = xpp.nextText();
                             Log.d(TAG, "pubDate raw = " + pubDateStr);

@@ -1,38 +1,55 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="8dp"
     app:cardCornerRadius="16dp"
-    app:cardUseCompatPadding="true"
     app:cardElevation="4dp">
 
-    <LinearLayout
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
         android:padding="12dp">
 
+        <!-- Pavadinimas -->
         <TextView
             android:id="@+id/newsTitleTextView"
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="Pavadinimas"
-            android:textSize="16sp"
+            android:text="Straipsnio pavadinimas"
             android:textStyle="bold"
-            android:maxLines="3"
-            android:ellipsize="end" />
+            android:textSize="16sp"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/favoriteButton"
+            app:layout_constraintHorizontal_bias="0" />
 
+        <!-- Data (jei rodai) -->
         <TextView
             android:id="@+id/newsDateTextView"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="2025-11-20 12:34"
+            android:text="2025-11-20"
             android:textSize="12sp"
-            android:textColor="#808080"
-            android:layout_marginTop="4dp" />
+            android:layout_marginTop="4dp"
+            app:layout_constraintTop_toBottomOf="@+id/newsTitleTextView"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent" />
 
-    </LinearLayout>
+        <!-- Širdelė viršutiniame dešiniajame kampe -->
+        <ImageButton
+            android:id="@+id/favoriteButton"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:background="@android:color/transparent"
+            android:contentDescription="Įsiminti straipsnį"
+            app:srcCompat="@drawable/baseline_favorite_border_24"
+            android:tint="@android:color/darker_gray"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
 
 </com.google.android.material.card.MaterialCardView>
