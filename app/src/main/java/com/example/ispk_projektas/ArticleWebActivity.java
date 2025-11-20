@@ -58,4 +58,12 @@ public class ArticleWebActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    @Overri
+    @Override
+    public void onBackPressed() {
+        if (webView != null && webView.canGoBack()) {
+            webView.goBack();
+        } else {
+            super.onBackPressed();
+        }
+    }
+}

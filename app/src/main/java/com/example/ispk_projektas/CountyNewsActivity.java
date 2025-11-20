@@ -220,4 +220,158 @@ public class CountyNewsActivity extends AppCompatActivity {
     /** Build Google News RSS URL from county + category */
     private String buildGoogleNewsUrl(String countyName, String categoryFilter) {
         StringBuilder query = new StringBuilder();
-  
+        query.append(countyName).append(" naujienos");
+        if (categoryFilter != null && !categoryFilter.isEmpty()) {
+            query.append(" ").append(categoryFilter);
+        }
+
+        try {
+            String encodedQuery = java.net.URLEncoder.encode(query.toString(), "UTF-8");
+            String url = "https://news.google.com/rss/search?q=" + encodedQuery +
+                    "&hl=lt&gl=LT&ceid=LT:lt";
+            Log.d(TAG, "Request URL: " + url);
+            return url;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    /** AsyncTask to fetch and parse RSS */
+    private class FetchNewsTask extends AsyncTask<String, Void, List<NewsItem>> {
+
+        @Override
+        protected List<NewsItem> doInBackground(String... params) {
+            String county = params[0];
+
+            String urlString = buildGoogleNewsUrl(county, selectedCategory);
+            if (urlString == null) return null;
+
+            List<NewsItem> result = new ArrayList<>();
+            InputStream inputStream = null;
+            HttpURLConnection connection = null;
+            try {
+                URL url = new URL(urlString);
+                connection = (HttpURLConnection) url.openConnection();
+                connection.setRequestMethod("GET");
+                connection.setConnectTimeout(10000);
+                connection.setReadTimeout(10000);
+                connection.connect();
+
+                int code = connection.getResponseCode();
+                Log.d(TAG, "HTTP code = " + code);
+
+                if (code == HttpURLConnection.HTTP_OK) {
+                    inputStream = connection.getInputStream();
+                    result = parseRss(inputStream);
+                } else {
+                    return null;
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "Error fetching news", e);
+                return null;
+            } finally {
+                try {
+                    if (inputStream != null) inputStream.close();
+                } catch (Exception ignored) {}
+                if (connection != null) connection.disconnect();
+            }
+            return result;
+        }
+
+        @Override
+        protected void onPostExecute(List<NewsItem> newsItems) {
+            if (newsItems == null) {
+                Toast.makeText(CountyNewsActivity.this,
+                        "Nepavyko įkelti naujienų", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            Log.d(TAG, "parseRss returned items: " + newsItems.size());
+            allItems = newsItems;
+            applyFiltersAndShow();
+        }
+    }
+
+    /** Apply date filters to allItems and show result in adapter */
+    private void applyFiltersAndShow() {
+        List<NewsItem> filtered = new ArrayList<>();
+
+        for (NewsItem item : allItems) {
+            long t = item.pubDateMillis;
+
+            // Filter by date (if pubDate missing (0), drop when filters are set)
+            if (fromDateMillis != null && (t == 0 || t < fromDateMillis)) continue;
+            if (toDateMillis != null && (t == 0 || t > toDateMillis)) continue;
+
+            filtered.add(item);
+        }
+
+        adapter.updateData(filtered);
+        Toast.makeText(this,
+                "Rasta straipsnių: " + filtered.size(),
+                Toast.LENGTH_SHORT).show();
+    }
+
+    /** Parse RSS into list of NewsItem (title, link, pubDateMillis) */
+    private List<NewsItem> parseRss(InputStream inputStream) throws Exception {
+        List<NewsItem> items = new ArrayList<>();
+
+        XmlPullParserFactory factory = XmlPullParserFactory.newInstance();
+        factory.setNamespaceAware(false);
+        XmlPullParser xpp = factory.newPullParser();
+        xpp.setInput(inputStream, "UTF-8");
+
+        boolean insideItem = false;
+        String title = null, link = null, description = null, pubDateStr = null;
+
+        int eventType = xpp.getEventType();
+        while (eventType != XmlPullParser.END_DOCUMENT) {
+            String name;
+            switch (eventType) {
+                case XmlPullParser.START_TAG:
+                    name = xpp.getName();
+                    if ("item".equalsIgnoreCase(name)) {
+                        insideItem = true;
+                        title = link = description = pubDateStr = null;
+                    } else if (insideItem) {
+                        if ("title".equalsIgnoreCase(name)) {
+                            title = xpp.nextText();
+                        } else if ("link".equalsIgnoreCase(name)) {
+                            link = xpp.nextText();
+                        } else if ("description".equalsIgnoreCase(name)) {
+                            description = xpp.nextText(); // we parse but don't show it
+                        } else if ("pubDate".equalsIgnoreCase(name)) {
+                            pubDateStr = xpp.nextText();
+                            Log.d(TAG, "pubDate raw = " + pubDateStr);
+                        }
+                    }
+                    break;
+                case XmlPullParser.END_TAG:
+                    name = xpp.getName();
+                    if ("item".equalsIgnoreCase(name) && insideItem) {
+                        long pubMillis = 0;
+                        if (pubDateStr != null) {
+                            try {
+                                Date d = rssDateFormat.parse(pubDateStr);
+                                if (d != null) pubMillis = d.getTime();
+                            } catch (ParseException e) {
+                                Log.w(TAG, "Failed to parse pubDate: " + pubDateStr, e);
+                            }
+                        }
+                        items.add(new NewsItem(
+                                title != null ? title : "",
+                                link != null ? link : "",
+                                description != null ? description : "",
+                                pubMillis
+                        ));
+                        insideItem = false;
+                    }
+                    break;
+            }
+            eventType = xpp.next();
+        }
+
+        return items;
+    }
+}
