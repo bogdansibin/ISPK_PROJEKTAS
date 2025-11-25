@@ -83,8 +83,6 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             startActivity(intent);
         });
         // Initial toast removed for a persistent display
-        logoutButton = findViewById(R.id.logoutButton);
-        logoutButton.setOnClickListener(v -> performLogout());
 
         SupportMapFragment mapFragment =
                 (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
@@ -133,38 +131,6 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     /**
      * Override the back button press to prompt for logout.
      */
-    @Override
-    public void onBackPressed() {
-        super.onBackPressed();
-        showLogoutConfirmationDialog();
-    }
-
-    private void showLogoutConfirmationDialog() {
-        new AlertDialog.Builder(this)
-                .setTitle("Log Out")
-                .setMessage("Are you sure you want to log out and return to the login screen?")
-                .setPositiveButton("Log Out", (dialog, which) -> {
-                    performLogout();
-                })
-                .setNegativeButton("Cancel", (dialog, which) -> {
-                    dialog.dismiss();
-                })
-                .show();
-    }
-
-
-    private void performLogout() {
-        auth.signOut(); // Firebase sign out
-        Toast.makeText(this, "Successfully logged out.", Toast.LENGTH_SHORT).show();
-
-        // Redirect to LoginActivity and clear the back stack
-        Intent intent = new Intent(MapActivity.this, LoginActivity.class);
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-        startActivity(intent);
-        finish();
-    }
-
-    // --- EXISTING METHODS BELOW ---
 
     private void applyMapStyleBasedOnSystemTheme() {
         int currentNightMode = getResources().getConfiguration().uiMode

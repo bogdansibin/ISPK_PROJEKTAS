@@ -23,9 +23,6 @@
         app:navigationIcon="@drawable/arrow_back"
         app:title="Naujienos"
         app:titleTextColor="@android:color/white" />
-        android:background="?attr/colorPrimary"
-        android:titleTextColor="@android:color/white"
-        app:navigationIcon="@drawable/arrow_back"/>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/newsRecyclerView"
