@@ -68,6 +68,10 @@ public class CountyNewsActivity extends AppCompatActivity {
     private FirebaseFirestore db;
     private FirebaseAuth auth;
 
+    private long loadStartTime = 0;
+    private long loadEndTime = 0;
+
+
     // saugom favorites linkus
     private final List<String> favoriteLinks = new ArrayList<>();
 
@@ -255,6 +259,14 @@ public class CountyNewsActivity extends AppCompatActivity {
     /** AsyncTask to fetch and parse RSS */
     private class FetchNewsTask extends AsyncTask<String, Void, List<NewsItem>> {
 
+
+        @Override
+        protected void onPreExecute() {
+            super.onPreExecute();
+            loadStartTime = System.currentTimeMillis();
+            Log.d(TAG, "News load started");
+        }
+
         @Override
         protected List<NewsItem> doInBackground(String... params) {
             String county = params[0];
@@ -305,7 +317,6 @@ public class CountyNewsActivity extends AppCompatActivity {
             Log.d(TAG, "parseRss returned items: " + newsItems.size());
             allItems = newsItems;
 
-            // 👇 užkraunam favorites iš Firestore ir tik tada rodome
             loadFavoritesAndShow();
         }
     }
@@ -368,6 +379,15 @@ public class CountyNewsActivity extends AppCompatActivity {
         Toast.makeText(this,
                 "Rasta straipsnių: " + filtered.size(),
                 Toast.LENGTH_SHORT).show();
+
+        loadEndTime = System.currentTimeMillis();
+        long duration = loadEndTime - loadStartTime;
+
+        Log.d(TAG, "Total news load time = " + duration + " ms");
+        Toast.makeText(this,
+                "Užkrovimo laikas: " + duration + " ms",
+                Toast.LENGTH_LONG).show();
+
     }
 
     /** Parse RSS into list of NewsItem (title, link, pubDateMillis) */

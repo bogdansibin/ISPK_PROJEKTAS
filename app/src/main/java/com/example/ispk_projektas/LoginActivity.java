@@ -5,6 +5,7 @@ import android.os.Bundle;
 import android.text.TextUtils;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -34,6 +35,8 @@ public class LoginActivity extends AppCompatActivity {
     private Button loginButton, goRegisterButton;
     private Button googleSignInButton;
 
+    private TextView forgotPasswordText; // 👈 PRIDĖTA
+
     private FirebaseAuth auth;
     private FirebaseFirestore db;
 
@@ -59,6 +62,7 @@ public class LoginActivity extends AppCompatActivity {
         loginButton = findViewById(R.id.loginButton);
         goRegisterButton = findViewById(R.id.registerButton);
         googleSignInButton = findViewById(R.id.googleSignInButton);
+        forgotPasswordText = findViewById(R.id.forgotPasswordText);
 
         // Email/password login
         loginButton.setOnClickListener(v -> loginUser());
@@ -74,6 +78,33 @@ public class LoginActivity extends AppCompatActivity {
         googleSignInClient = GoogleSignIn.getClient(this, gso);
 
         googleSignInButton.setOnClickListener(v -> signInWithGoogle());
+
+        forgotPasswordText.setOnClickListener(v -> sendPasswordReset());
+
+    }
+
+    private void sendPasswordReset() {
+        String email = emailEditText.getText().toString().trim();
+
+        if (email.isEmpty()) {
+            emailEditText.setError("Įveskite el. paštą");
+            emailEditText.requestFocus();
+            return;
+        }
+
+        auth.sendPasswordResetEmail(email)
+                .addOnCompleteListener(task -> {
+                    if (task.isSuccessful()) {
+                        Toast.makeText(this,
+                                "Slaptažodžio atstatymo nuoroda išsiųsta į " + email,
+                                Toast.LENGTH_LONG).show();
+                    } else {
+                        String message = task.getException() != null
+                                ? task.getException().getMessage()
+                                : "Nepavyko išsiųsti el. laiško";
+                        Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+                    }
+                });
     }
 
     //prisijungimu patirkinimas
