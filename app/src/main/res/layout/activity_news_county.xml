@@ -9,11 +9,20 @@
         android:id="@+id/topAppBar"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
+        android:background="?attr/colorPrimary"
+        app:itemIconTint="@android:color/white"
+        app:itemTextColor="@android:color/white"
+
         app:layout_constraintEnd_toEndOf="parent"
-        app:title="Naujienos"
+
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+
         app:menu="@menu/menu_news_filter"
+
+        app:navigationIcon="@drawable/arrow_back"
+        app:title="Naujienos"
+        app:titleTextColor="@android:color/white" />
         android:background="?attr/colorPrimary"
         android:titleTextColor="@android:color/white"
         app:navigationIcon="@drawable/arrow_back"/>

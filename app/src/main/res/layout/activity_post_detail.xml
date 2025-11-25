@@ -1,67 +1,86 @@
-<?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:padding="16dp">
+    android:orientation="vertical">
 
-    <!-- Įrašo informacija -->
-    <TextView
-        android:id="@+id/detailTitleTextView"
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:textStyle="bold"
-        android:textSize="18sp"
-        android:text="Pavadinimas" />
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorPrimary"
+        app:titleTextColor="@android:color/white"
+        app:title="Komentarai"
+        app:navigationIcon="@drawable/arrow_back"
+        android:elevation="4dp"
+        android:padding="0dp"
+        app:contentInsetStartWithNavigation="0dp"
+        app:contentInsetLeft="0dp"
+        app:contentInsetRight="0dp" />
 
-    <TextView
-        android:id="@+id/detailMetaTextView"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Kategorija • Autorius"
-        android:textSize="14sp"
-        android:paddingTop="4dp" />
-
-    <TextView
-        android:id="@+id/detailContentTextView"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingTop="8dp"
-        android:text="Pilnas turinys" />
-
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="1dp"
-        android:background="#DDDDDD"
-        android:layout_marginTop="12dp"
-        android:layout_marginBottom="12dp"/>
-
-    <!-- Komentarų sąrašas -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/commentsRecyclerView"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1" />
-
-    <!-- Naujo komentaro įvedimas -->
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:paddingTop="8dp">
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:padding="16dp">
 
-        <EditText
-            android:id="@+id/commentEditText"
-            android:layout_width="0dp"
+        <TextView
+            android:id="@+id/detailTitleTextView"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:hint="Parašyk komentarą..." />
+            android:textStyle="bold"
+            android:textSize="18sp"
+            android:text="Pavadinimas" />
 
-        <Button
-            android:id="@+id/sendCommentButton"
-            android:layout_width="wrap_content"
+        <TextView
+            android:id="@+id/detailMetaTextView"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Siųsti" />
+            android:text="Kategorija • Autorius"
+            android:textSize="14sp"
+            android:paddingTop="4dp" />
+
+        <TextView
+            android:id="@+id/detailContentTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="8dp"
+            android:text="Pilnas turinys" />
+
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="1dp"
+            android:background="#DDDDDD"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="12dp"/>
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/commentsRecyclerView"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingTop="8dp">
+
+            <EditText
+                android:id="@+id/commentEditText"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:hint="Parašyk komentarą..." />
+
+            <Button
+                android:id="@+id/sendCommentButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Siųsti" />
+        </LinearLayout>
+
     </LinearLayout>
 
 </LinearLayout>

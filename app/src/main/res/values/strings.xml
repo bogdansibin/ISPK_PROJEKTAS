@@ -25,4 +25,6 @@
         <item>Rodyti tik mano įrašus</item>
         <item> Atstatyti filtrus</item>
     </string-array>
+
+        <color name="purple">#6200EE</color>
 </resources>

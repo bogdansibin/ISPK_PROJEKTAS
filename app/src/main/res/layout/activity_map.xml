@@ -12,42 +12,42 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
-    <Button
-        android:id="@+id/userInfoTextView"
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/userInfoFab"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:padding="8dp"
         android:layout_margin="16dp"
-        android:text="User Info Loading..."
-        android:textColor="@android:color/black"
-        android:background="#018786"
+        android:src="@drawable/circle"
+        app:tint="@android:color/white"
+        app:backgroundTint="@color/purple"
         android:textStyle="bold"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
 
+
     <Button
-        android:id="@+id/logoutButtonn"
+        android:id="@+id/logoutButton"
         android:text="Log out"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:padding="8dp"
-        app:layout_constraintTop_toTopOf="@+id/userInfoTextView"
-        app:layout_constraintBottom_toBottomOf="@+id/userInfoTextView"
+        app:layout_constraintTop_toTopOf="@+id/userInfoFab"
+        app:layout_constraintBottom_toBottomOf="@+id/userInfoFab"
         app:layout_constraintEnd_toEndOf="parent"
         android:layout_margin="16dp" />
 
-    <Button
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/btn_f"
-        android:layout_width="56dp"
-        android:layout_height="56dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_margin="16dp"
-        android:text="Forumas"
-        android:textStyle="bold"
-        android:textColor="@android:color/white"
-        android:textSize="24sp"
-        android:textAllCaps="false"
+        app:srcCompat="@drawable/chat"
+        app:backgroundTint="@color/purple"
+        app:tint="@android:color/white"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
+
 
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -1,6 +1,7 @@
 package com.example.ispk_projektas;
 
 import android.content.Context;
+import android.content.Intent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -75,11 +76,14 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.NewsViewHolder
         TextView dateText;
         ImageButton favoriteButton;
 
+        ImageButton shareButton;
+
         public NewsViewHolder(@NonNull View itemView) {
             super(itemView);
             titleText = itemView.findViewById(R.id.newsTitleTextView);
             dateText = itemView.findViewById(R.id.newsDateTextView);
             favoriteButton = itemView.findViewById(R.id.favoriteButton);
+            shareButton = itemView.findViewById(R.id.shareButton);
         }
 
         public void bind(NewsItem item,
@@ -100,6 +104,19 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.NewsViewHolder
             updateFavoriteIcon(item.isFavorite, favoriteButton);
 
             itemView.setOnClickListener(v -> listener.onItemClick(item));
+
+            shareButton.setOnClickListener(v -> {
+                String shareText = item.title + "\n" + item.link;
+
+                Intent shareIntent = new Intent(Intent.ACTION_SEND);
+                shareIntent.setType("text/plain");
+                shareIntent.putExtra(Intent.EXTRA_SUBJECT, item.title);
+                shareIntent.putExtra(Intent.EXTRA_TEXT, shareText);
+
+                context.startActivity(
+                        Intent.createChooser(shareIntent, "Dalintis straipsniu")
+                );
+            });
 
             favoriteButton.setOnClickListener(v -> {
                 FirebaseUser user = auth.getCurrentUser();
