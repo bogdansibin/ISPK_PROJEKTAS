@@ -14,6 +14,7 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:title="Naujienos"
         app:menu="@menu/menu_news_filter"
+        android:background="?attr/colorPrimary"
         android:titleTextColor="@android:color/white"
         app:navigationIcon="@drawable/arrow_back"/>
 

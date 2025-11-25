@@ -3,13 +3,16 @@ package com.example.ispk_projektas;
 import com.google.firebase.Timestamp;
 
 public class PostComment {
+
     private String id;
     private String tekstas;
     private String autoriusId;
     private String autoriusVardas;
     private Timestamp sukurta;
 
-    public PostComment() {}
+    public PostComment() {
+        // Firestore needs empty constructor
+    }
 
     public PostComment(String id, String tekstas, String autoriusId,
                        String autoriusVardas, Timestamp sukurta) {

@@ -14,12 +14,31 @@ import java.util.Locale;
 
 public class CommentsAdapter extends RecyclerView.Adapter<CommentsAdapter.CommentViewHolder> {
 
+    public interface OnCommentLongClickListener {
+        void onCommentLongClick(PostComment comment);
+    }
+
     private final List<PostComment> items;
     private final SimpleDateFormat dateFormat =
             new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault());
 
-    public CommentsAdapter(List<PostComment> items) {
+    private boolean isAdmin;
+    private OnCommentLongClickListener longClickListener;
+
+    public CommentsAdapter(List<PostComment> items, boolean isAdmin,
+                           OnCommentLongClickListener longClickListener) {
         this.items = items;
+        this.isAdmin = isAdmin;
+        this.longClickListener = longClickListener;
+    }
+
+    public void setAdmin(boolean isAdmin) {
+        this.isAdmin = isAdmin;
+        notifyDataSetChanged();
+    }
+
+    public void setLongClickListener(OnCommentLongClickListener listener) {
+        this.longClickListener = listener;
     }
 
     @NonNull
@@ -39,6 +58,16 @@ public class CommentsAdapter extends RecyclerView.Adapter<CommentsAdapter.Commen
         }
         holder.text1.setText(line1);
         holder.text2.setText(c.getTekstas());
+
+        // ADMIN: ilgai paspaudus – trinti komentarą
+        if (isAdmin && longClickListener != null) {
+            holder.itemView.setOnLongClickListener(v -> {
+                longClickListener.onCommentLongClick(c);
+                return true;
+            });
+        } else {
+            holder.itemView.setOnLongClickListener(null);
+        }
     }
 
     @Override
