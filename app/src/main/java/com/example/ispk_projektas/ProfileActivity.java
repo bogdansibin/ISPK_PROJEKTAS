@@ -40,6 +40,8 @@ public class ProfileActivity extends AppCompatActivity {
 
     private FirebaseFirestore db;
 
+    private com.google.android.material.button.MaterialButton logoutButton;
+
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -78,6 +80,11 @@ public class ProfileActivity extends AppCompatActivity {
         setupRecyclerViews();
         loadMyForumPosts();
         loadSavedArticles();
+
+        logoutButton = findViewById(R.id.logoutButton);
+        logoutButton.setOnClickListener(v -> {
+            AuthManager.logout(ProfileActivity.this);
+        });
     }
 
     @Override

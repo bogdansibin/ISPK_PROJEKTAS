@@ -7,6 +7,7 @@ import android.widget.Spinner;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
 
 import com.example.ispk_projektas.R;
 import com.google.firebase.auth.FirebaseAuth;
@@ -32,6 +33,11 @@ public class CreateForum extends AppCompatActivity {
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_create_forum);
+
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        toolbar.setNavigationOnClickListener(v -> onBackPressed());
+
 
         db = FirebaseFirestore.getInstance();
 

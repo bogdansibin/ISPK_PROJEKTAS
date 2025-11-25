@@ -9,9 +9,14 @@
     android:background="#F5F5F5"
     tools:context="CreateForum">
 
-    <include
-        layout="@layout/toolbar_layout"
-        app:title="Kitas ekranas" />
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        android:background="?attr/colorPrimary"
+        app:title="Kurti įrašą"
+        app:titleTextColor="@android:color/white"
+        app:navigationIcon="@drawable/arrow_back" />
 
     <LinearLayout
         android:id="@+id/main"

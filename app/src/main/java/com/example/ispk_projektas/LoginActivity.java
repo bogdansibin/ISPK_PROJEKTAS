@@ -2,6 +2,7 @@ package com.example.ispk_projektas;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -75,6 +76,8 @@ public class LoginActivity extends AppCompatActivity {
         googleSignInButton.setOnClickListener(v -> signInWithGoogle());
     }
 
+    //prisijungimu patirkinimas
+
     /**
      * Helper function to fetch user profile and redirect to MapActivity or NicknameActivity.
      */
@@ -114,6 +117,18 @@ public class LoginActivity extends AppCompatActivity {
     private void loginUser() {
         String email = emailEditText.getText().toString().trim();
         String password = passwordEditText.getText().toString().trim();
+
+        if (TextUtils.isEmpty(email)) {
+            emailEditText.setError("Įveskite el. paštą");
+            emailEditText.requestFocus();
+            return;
+        }
+        if (TextUtils.isEmpty(password)) {
+            emailEditText.setError("Įveskite slaptažodį");
+            emailEditText.requestFocus();
+            return;
+        }
+
 
         auth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener(task -> {

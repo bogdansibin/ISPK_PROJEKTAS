@@ -27,6 +27,7 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.android.gms.maps.model.Polygon;
 import com.google.android.gms.maps.model.PolygonOptions;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.firebase.auth.FirebaseAuth; // ADDED
 import com.google.maps.android.data.Feature;
 import com.google.maps.android.data.geojson.GeoJsonFeature;
@@ -48,13 +49,10 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private GeoJsonLayer countiesLayer;
     private GeoJsonFeature selectedFeature;
     private Polygon selectedPolygon;
-    private Button btnF;
-
-    // 🌟 ADDED: For Session and UI
-    private FirebaseAuth auth;
-    private Button userInfoTextView;
-
     private Button logoutButton;
+    private FirebaseAuth auth;
+    private FloatingActionButton btnF;
+    private FloatingActionButton userInfoFab;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -70,12 +68,12 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         String email = getIntent().getStringExtra("email");
 
         // --- DISPLAY USER INFO ---
-        userInfoTextView = findViewById(R.id.userInfoTextView);
-        if (userInfoTextView != null) {
-            userInfoTextView.setText("Logged in as: " + nickname + " (" + role + ")");
-        }
+        userInfoFab = findViewById(R.id.userInfoFab);
+//        if (userInfoTextView != null) {
+//            userInfoTextView.setText("Logged in as: " + nickname + " (" + role + ")");
+//        }
 
-        userInfoTextView.setOnClickListener(v -> {
+        userInfoFab.setOnClickListener(v -> {
             Intent intent = new Intent(MapActivity.this, ProfileActivity.class);
 
             // OPTIONAL — pass data if you want to show nickname, role, email
@@ -85,7 +83,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             startActivity(intent);
         });
         // Initial toast removed for a persistent display
-        logoutButton = findViewById(R.id.logoutButtonn);
+        logoutButton = findViewById(R.id.logoutButton);
         logoutButton.setOnClickListener(v -> performLogout());
 
         SupportMapFragment mapFragment =
