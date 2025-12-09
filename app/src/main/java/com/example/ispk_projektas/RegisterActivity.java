@@ -19,6 +19,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthUserCollisionException;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.UserProfileChangeRequest;
 import com.google.firebase.auth.GoogleAuthProvider;
@@ -73,30 +74,50 @@ public class RegisterActivity extends AppCompatActivity {
         String password = passwordEditText.getText().toString().trim();
 
         if (TextUtils.isEmpty(nickname)) {
-            nicknameEditText.setError("Enter nickname");
+            nicknameEditText.setError("Įveskite slapyvardį");
             nicknameEditText.requestFocus();
             return;
         }
 
         if (TextUtils.isEmpty(email)) {
-            emailEditText.setError("Enter email");
+            emailEditText.setError("Įveskite el. paštą");
             emailEditText.requestFocus();
             return;
         }
 
         if (TextUtils.isEmpty(password)) {
-            passwordEditText.setError("Enter password");
+            passwordEditText.setError("Įveskite slaptažodį");
             passwordEditText.requestFocus();
             return;
         }
 
         if (password.length() < 6) {
-            passwordEditText.setError("Password must be at least 6 characters");
+            passwordEditText.setError("Slaptažodis turi būti bent 6 simbolių");
             passwordEditText.requestFocus();
             return;
         }
 
-        // Create user in Firebase Auth (email/password)
+        // 1) Tikrinam, ar toks slapyvardis jau naudojamas
+        db.collection("users")
+                .whereEqualTo("nickname", nickname)
+                .get()
+                .addOnSuccessListener(querySnapshot -> {
+                    if (!querySnapshot.isEmpty()) {
+                        // jau yra toks nickname
+                        nicknameEditText.setError("Toks slapyvardis jau naudojamas");
+                        nicknameEditText.requestFocus();
+                    } else {
+                        // slapyvardis laisvas – kuriam vartotoją
+                        createUserWithEmail(nickname, email, password);
+                    }
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(this,
+                                "Nepavyko patikrinti slapyvardžio: " + e.getMessage(),
+                                Toast.LENGTH_LONG).show()
+                );
+    }
+    private void createUserWithEmail(String nickname, String email, String password) {
         auth.createUserWithEmailAndPassword(email, password)
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
@@ -114,17 +135,26 @@ public class RegisterActivity extends AppCompatActivity {
                         db.collection("users").document(uid)
                                 .set(userData)
                                 .addOnSuccessListener(unused -> {
-                                    Toast.makeText(this, "Registered!", Toast.LENGTH_SHORT).show();
-                                    // No need for CLEAR_TASK here, it's a natural transition
+                                    Toast.makeText(this, "Registracija sėkminga!", Toast.LENGTH_SHORT).show();
                                     startActivity(new Intent(this, LoginActivity.class));
                                     finish();
                                 })
                                 .addOnFailureListener(e ->
-                                        Toast.makeText(this, "Failed: " + e.getMessage(), Toast.LENGTH_LONG).show()
+                                        Toast.makeText(this,
+                                                "Nepavyko išsaugoti profilio: " + e.getMessage(),
+                                                Toast.LENGTH_LONG).show()
                                 );
                     } else {
-                        Toast.makeText(this, "Auth failed: " + task.getException().getMessage(),
-                                Toast.LENGTH_LONG).show();
+                        Exception ex = task.getException();
+                        // Tikrinam, ar toks el. paštas jau registruotas
+                        if (ex instanceof FirebaseAuthUserCollisionException) {
+                            emailEditText.setError("Toks el. paštas jau yra užregistruotas");
+                            emailEditText.requestFocus();
+                        } else {
+                            Toast.makeText(this,
+                                    "Registracija nepavyko: " + (ex != null ? ex.getMessage() : ""),
+                                    Toast.LENGTH_LONG).show();
+                        }
                     }
                 });
     }

@@ -167,13 +167,12 @@ public class LoginActivity extends AppCompatActivity {
                         FirebaseUser firebaseUser = auth.getCurrentUser();
                         if (firebaseUser == null) return;
 
-                        // 🌟 Use the helper method after successful authentication
                         checkProfileAndRedirect(firebaseUser.getUid());
 
                     } else {
-                        Toast.makeText(this,
-                                "Login failed: " + task.getException().getMessage(),
-                                Toast.LENGTH_LONG).show();
+                        emailEditText.setError("Neteisingas el. paštas arba slaptažodis");
+                        passwordEditText.setError("Neteisingas el. paštas arba slaptažodis");
+                        passwordEditText.requestFocus();
                     }
                 });
     }
