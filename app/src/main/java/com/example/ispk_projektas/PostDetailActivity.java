@@ -38,6 +38,9 @@ public class PostDetailActivity extends AppCompatActivity {
     private String currentUserId;
     private String currentUserName;
     private boolean isAdmin = false;
+    private PostComment replyToComment = null;
+
+    private boolean viewCountUpdated = false;
 
     private final List<PostComment> comments = new ArrayList<>();
     private CommentsAdapter commentsAdapter;
@@ -95,7 +98,8 @@ public class PostDetailActivity extends AppCompatActivity {
         commentsAdapter = new CommentsAdapter(
                 comments,
                 isAdmin,
-                this::onCommentLongClick
+                this::onCommentLongClick,
+                this::onReplyClick
         );
         commentsRecyclerView.setAdapter(commentsAdapter);
 
@@ -174,21 +178,59 @@ public class PostDetailActivity extends AppCompatActivity {
                 .orderBy("sukurta", Query.Direction.ASCENDING)
                 .get()
                 .addOnSuccessListener(sn -> {
-                    List<PostComment> list = new ArrayList<>();
+                    List<PostComment> rawList = new ArrayList<>();
                     for (DocumentSnapshot doc : sn.getDocuments()) {
                         PostComment c = doc.toObject(PostComment.class);
                         if (c != null) {
                             c.setId(doc.getId());
+                            rawList.add(c);
+                        }
+                    }
+
+                    // 🔹 išskaidom į tėvinius ir vaikus
+                    List<PostComment> topLevel = new ArrayList<>();
+                    java.util.Map<String, List<PostComment>> childrenMap = new java.util.HashMap<>();
+
+                    for (PostComment c : rawList) {
+                        String parentId = c.getParentCommentId();
+                        if (parentId == null) {
+                            topLevel.add(c);
+                        } else {
+                            List<PostComment> list = childrenMap.get(parentId);
+                            if (list == null) {
+                                list = new ArrayList<>();
+                                childrenMap.put(parentId, list);
+                            }
                             list.add(c);
                         }
                     }
-                    commentsAdapter.replaceData(list);
+                    List<PostComment> ordered = new ArrayList<>();
+                    for (PostComment parent : topLevel) {
+                        addWithChildren(parent, 0, childrenMap, ordered);
+                    }
+
+                    commentsAdapter.replaceData(ordered);
                 })
                 .addOnFailureListener(e ->
                         Toast.makeText(this,
                                 "Klaida skaitant komentarus: " + e.getMessage(),
                                 Toast.LENGTH_LONG).show()
                 );
+    }
+
+    private void addWithChildren(PostComment comment,
+                                 int level,
+                                 java.util.Map<String, List<PostComment>> childrenMap,
+                                 List<PostComment> ordered) {
+        comment.setLevel(level);
+        ordered.add(comment);
+
+        List<PostComment> children = childrenMap.get(comment.getId());
+        if (children != null) {
+            for (PostComment child : children) {
+                addWithChildren(child, level + 1, childrenMap, ordered);
+            }
+        }
     }
 
     private void sendComment() {
@@ -216,12 +258,19 @@ public class PostDetailActivity extends AppCompatActivity {
         comment.setAutoriusVardas(nameToUse);
         comment.setSukurta(Timestamp.now());
 
+        // jei tai atsakymas
+        if (replyToComment != null && replyToComment.getId() != null) {
+            comment.setParentCommentId(replyToComment.getId());
+        }
+
         db.collection("irasai")
                 .document(postId)
                 .collection("komentarai")
                 .add(comment)
                 .addOnSuccessListener(ref -> {
                     commentEditText.setText("");
+                    replyToComment = null;
+                    commentEditText.setHint("Parašyk komentarą...");
                     loadComments();
                 })
                 .addOnFailureListener(e ->
@@ -232,30 +281,96 @@ public class PostDetailActivity extends AppCompatActivity {
     }
 
     private void onCommentLongClick(PostComment comment) {
-        if (!isAdmin || postId == null || comment.getId() == null) {
+        if (postId == null || comment.getId() == null) {
             return;
         }
 
+        if (isAdmin) {
+            new android.app.AlertDialog.Builder(this)
+                    .setTitle("Ištrinti komentarą")
+                    .setMessage("Ar tikrai norite ištrinti šį komentarą?")
+                    .setPositiveButton("Taip", (dialog, which) -> {
+                        db.collection("irasai")
+                                .document(postId)
+                                .collection("komentarai")
+                                .document(comment.getId())
+                                .delete()
+                                .addOnSuccessListener(aVoid -> {
+                                    Toast.makeText(this, "Komentaras ištrintas", Toast.LENGTH_SHORT).show();
+                                    loadComments();
+                                })
+                                .addOnFailureListener(e ->
+                                        Toast.makeText(this,
+                                                "Nepavyko ištrinti komentaro: " + e.getMessage(),
+                                                Toast.LENGTH_LONG).show()
+                                );
+                    })
+                    .setNegativeButton("Ne", null)
+                    .show();
+        } else {
+            showReportCommentDialog(comment);
+        }
+    }
+    private void showReportCommentDialog(PostComment comment) {
+        if (currentUserId == null) {
+            Toast.makeText(this, "Reikia būti prisijungus", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        String[] reasons = new String[] {
+                "Įžeidus turinys",
+                "Spam / reklama",
+                "Netinkama kalba",
+                "Kitas pažeidimas"
+        };
+
+        final int[] selectedIndex = {0};
+
         new android.app.AlertDialog.Builder(this)
-                .setTitle("Ištrinti komentarą")
-                .setMessage("Ar tikrai norite ištrinti šį komentarą?")
-                .setPositiveButton("Taip", (dialog, which) -> {
-                    db.collection("irasai")
-                            .document(postId)
-                            .collection("komentarai")
-                            .document(comment.getId())
-                            .delete()
-                            .addOnSuccessListener(aVoid -> {
-                                Toast.makeText(this, "Komentaras ištrintas", Toast.LENGTH_SHORT).show();
-                                loadComments();
-                            })
-                            .addOnFailureListener(e ->
-                                    Toast.makeText(this,
-                                            "Nepavyko ištrinti komentaro: " + e.getMessage(),
-                                            Toast.LENGTH_LONG).show()
-                            );
+                .setTitle("Pranešti apie komentarą")
+                .setSingleChoiceItems(reasons, 0, (dialog, which) -> {
+                    selectedIndex[0] = which;
                 })
-                .setNegativeButton("Ne", null)
+                .setPositiveButton("Pranešti", (dialog, which) -> {
+                    String reason = reasons[selectedIndex[0]];
+                    reportComment(comment, reason);
+                })
+                .setNegativeButton("Atšaukti", null)
                 .show();
     }
+    private void reportComment(PostComment comment, String reason) {
+        if (postId == null || comment.getId() == null) {
+            return;
+        }
+
+        java.util.Map<String, Object> updates = new java.util.HashMap<>();
+        updates.put("flagged", true);
+        updates.put("flagReason", reason);
+        updates.put("flaggedBy", currentUserId);
+        updates.put("flaggedAt", Timestamp.now());
+
+        db.collection("irasai")
+                .document(postId)
+                .collection("komentarai")
+                .document(comment.getId())
+                .update(updates)
+                .addOnSuccessListener(aVoid -> {
+                    Toast.makeText(this,
+                            "Komentaras pažymėtas kaip netinkamas",
+                            Toast.LENGTH_SHORT).show();
+                    loadComments();
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(this,
+                                "Nepavyko pažymėti komentaro: " + e.getMessage(),
+                                Toast.LENGTH_LONG).show()
+                );
+    }
+    private void onReplyClick(PostComment comment) {
+        replyToComment = comment;
+        String author = comment.getAutoriusVardas() != null ? comment.getAutoriusVardas() : "komentarą";
+        commentEditText.setHint("Atsakymas į: " + author);
+        commentEditText.requestFocus();
+    }
+
 }

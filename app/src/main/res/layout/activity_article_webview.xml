@@ -11,8 +11,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="?attr/colorPrimary"
-        android:titleTextColor="@android:color/white"
-        app:title="aaaaa"
+        app:titleTextColor="@android:color/white"
+        app:title="Straipsnis"
         app:navigationIcon="@drawable/arrow_back" />
 
     <!-- WebView -->

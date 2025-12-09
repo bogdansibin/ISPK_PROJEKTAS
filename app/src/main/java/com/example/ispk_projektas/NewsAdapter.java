@@ -75,7 +75,7 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.NewsViewHolder
         TextView titleText;
         TextView dateText;
         ImageButton favoriteButton;
-
+        TextView viewsText;
         ImageButton shareButton;
 
         public NewsViewHolder(@NonNull View itemView) {
@@ -84,6 +84,7 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.NewsViewHolder
             dateText = itemView.findViewById(R.id.newsDateTextView);
             favoriteButton = itemView.findViewById(R.id.favoriteButton);
             shareButton = itemView.findViewById(R.id.shareButton);
+            viewsText = itemView.findViewById(R.id.newsViewsTextView);
         }
 
         public void bind(NewsItem item,
@@ -100,10 +101,34 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.NewsViewHolder
             } else {
                 dateText.setText("");
             }
+            long views = item.views;
 
             updateFavoriteIcon(item.isFavorite, favoriteButton);
 
-            itemView.setOnClickListener(v -> listener.onItemClick(item));
+            if (item.link != null) {
+                String docId = String.valueOf(item.link.hashCode());
+                db.collection("newsViews")
+                        .document(docId)
+                        .get()
+                        .addOnSuccessListener(doc -> {
+                            if (doc.exists()) {
+                                Long v = doc.getLong("views");
+                                if (v != null) {
+                                    item.views = v;
+                                    viewsText.setText(String.valueOf(v));
+                                }
+                            } else {
+                                viewsText.setText(String.valueOf(item.views)); // default, jei DB dar nėra
+                            }
+                        });
+            }
+
+            itemView.setOnClickListener(v -> {
+                incrementNewsViews(db, item);
+                item.views++;
+                viewsText.setText(String.valueOf(item.views));
+                listener.onItemClick(item);
+            });
 
             shareButton.setOnClickListener(v -> {
                 String shareText = item.title + "\n" + item.link;
@@ -181,5 +206,45 @@ public class NewsAdapter extends RecyclerView.Adapter<NewsAdapter.NewsViewHolder
                 button.setColorFilter(0xFF777777); // pilka
             }
         }
+        private void incrementNewsViews(FirebaseFirestore db, NewsItem item) {
+            if (item.link == null) {
+                Toast.makeText(itemView.getContext(),
+                        "item.link yra null – peržiūros nefiksuojamos",
+                        Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            String docId = String.valueOf(item.link.hashCode());
+
+            db.collection("newsViews")
+                    .document(docId)
+                    .update("views", FieldValue.increment(1))
+                    .addOnSuccessListener(aVoid -> {
+                        //w.getContext(), "Peržiūra +1 (update)" Gali įsidėti debug:
+                        //                        // Toast.makeText(itemVie, Toast.LENGTH_SHORT).show();
+                    })
+                    .addOnFailureListener(e -> {
+                        // Jei update nepavyko (dažniausiai dokumento nėra) – kuriam naują
+                        Map<String, Object> data = new HashMap<>();
+                        data.put("title", item.title);
+                        data.put("link", item.link);
+                        data.put("views", 1L);
+
+                        db.collection("newsViews")
+                                .document(docId)
+                                .set(data)
+                                .addOnSuccessListener(aVoid2 -> {
+                                    // Toast.makeText(itemView.getContext(), "Sukurtas newsViews įrašas", Toast.LENGTH_SHORT).show();
+                                })
+                                .addOnFailureListener(e2 -> {
+                                    Toast.makeText(itemView.getContext(),
+                                            "Nepavyko išsaugoti peržiūrų: " + e2.getMessage(),
+                                            Toast.LENGTH_LONG).show();
+                                });
+                    });
+        }
+
+
+
     }
 }

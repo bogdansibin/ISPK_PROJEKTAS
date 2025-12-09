@@ -6,7 +6,7 @@ public class NewsItem {
     public String description;
     public long pubDateMillis;
     public boolean isFavorite;
-
+    public long views;
     public NewsItem(String title, String link, String description, long pubDateMillis) {
         this.title = title;
         this.link = link;

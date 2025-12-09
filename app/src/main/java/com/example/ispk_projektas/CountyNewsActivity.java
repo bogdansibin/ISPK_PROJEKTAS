@@ -2,6 +2,7 @@ package com.example.ispk_projektas;
 
 import android.app.DatePickerDialog;
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
@@ -91,6 +92,7 @@ public class CountyNewsActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_news_county);
 
+
         auth = FirebaseAuth.getInstance();
         db = FirebaseFirestore.getInstance();
 
@@ -99,6 +101,7 @@ public class CountyNewsActivity extends AppCompatActivity {
 
         // Toolbar
         MaterialToolbar toolbar = findViewById(R.id.topAppBar);
+        toolbar.setTitleTextColor(Color.WHITE);
         setSupportActionBar(toolbar);
         if (getSupportActionBar() != null) {
             getSupportActionBar().setTitle(countyName);

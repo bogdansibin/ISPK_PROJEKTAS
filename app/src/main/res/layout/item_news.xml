@@ -38,6 +38,22 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintBottom_toBottomOf="parent" />
 
+        <TextView
+            android:id="@+id/newsViewsTextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:drawableStart="@drawable/ic_eye"
+            android:drawablePadding="4dp"
+            android:gravity="center_vertical"
+            android:includeFontPadding="false"
+            android:text="0"
+            android:textSize="12sp"
+            android:textColor="@android:color/darker_gray"
+            app:layout_constraintTop_toBottomOf="@id/newsDateTextView"
+            app:layout_constraintStart_toStartOf="@id/newsDateTextView" />
+
+
+
         <!-- Mėgstamiausias -->
         <ImageButton
             android:id="@+id/favoriteButton"
@@ -51,7 +67,6 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintBottom_toTopOf="@id/shareButton" />
 
-        <!-- Dalintis (apačioje) -->
         <ImageButton
             android:id="@+id/shareButton"
             android:layout_width="32dp"
