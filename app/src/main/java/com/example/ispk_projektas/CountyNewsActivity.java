@@ -4,6 +4,7 @@ import android.app.DatePickerDialog;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -27,9 +28,13 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.xmlpull.v1.XmlPullParser;
 import org.xmlpull.v1.XmlPullParserFactory;
 
+import java.io.File;
+import java.io.FileWriter;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -70,12 +75,14 @@ public class CountyNewsActivity extends AppCompatActivity {
 
     private long loadStartTime = 0;
     private long loadEndTime = 0;
+    private Handler autoRefreshHandler = new Handler();
+    private Runnable autoRefreshRunnable;
+    private int refreshCount = 0;
+    private static final int MAX_REFRESH = 5;      // ciklas 5 kartus
+    private static final long REFRESH_DELAY = 10000; // 60 sek
 
-
-    // saugom favorites linkus
     private final List<String> favoriteLinks = new ArrayList<>();
 
-    // Category list
     private final String[] CATEGORIES = new String[]{
             "Visos",
             "Politika",
@@ -120,8 +127,53 @@ public class CountyNewsActivity extends AppCompatActivity {
         );
         newsRecyclerView.setAdapter(adapter);
 
-        // Load news with default filters (no category, no date)
         fetchNews();
+        startAutoRefresh();
+    }
+
+    private void saveNewsToJson(List<NewsItem> items) {
+        File file = new File(getFilesDir(), "news_cache.json");
+        Log.d(TAG, "Attempting to save JSON. items=" + (items == null ? "null" : items.size()));
+        Log.d(TAG, "Target file path: " + file.getAbsolutePath());
+
+        try {
+            JSONArray jsonArray = new JSONArray();
+
+            if (items != null) {
+                for (NewsItem item : items) {
+                    JSONObject obj = new JSONObject();
+                    obj.put("title", item.title);
+                    obj.put("link", item.link);
+                    obj.put("description", item.description);
+                    obj.put("pubDateMillis", item.pubDateMillis);
+                    jsonArray.put(obj);
+                }
+            }
+
+            JSONObject root = new JSONObject();
+            root.put("news", jsonArray);
+
+            try (FileWriter writer = new FileWriter(file, false)) {
+                writer.write(root.toString(2));
+                writer.flush();
+            }
+
+            Log.d(TAG, "✅ News saved OK. bytes=" + file.length());
+            Toast.makeText(this, "✅ JSON saved: " + file.getName() + " (" + file.length() + "B)", Toast.LENGTH_SHORT).show();
+
+        } catch (Exception e) {
+            Log.e(TAG, "❌ Error saving JSON", e);
+            Toast.makeText(this, "❌ JSON save error: " + e.getClass().getSimpleName(), Toast.LENGTH_LONG).show();
+        }
+    }
+
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (autoRefreshHandler != null && autoRefreshRunnable != null) {
+            autoRefreshHandler.removeCallbacks(autoRefreshRunnable);
+        }
     }
 
     @Override
@@ -137,6 +189,23 @@ public class CountyNewsActivity extends AppCompatActivity {
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    private void startAutoRefresh() {
+        autoRefreshRunnable = new Runnable() {
+            @Override
+            public void run() {
+                if (refreshCount < MAX_REFRESH) {
+                    Log.d(TAG, "Auto refresh #" + (refreshCount + 1));
+                    fetchNews();
+                    refreshCount++;
+                    autoRefreshHandler.postDelayed(this, REFRESH_DELAY);
+                } else {
+                    Log.d(TAG, "Auto refresh finished");
+                }
+            }
+        };
+        autoRefreshHandler.postDelayed(autoRefreshRunnable, REFRESH_DELAY);
     }
 
     /** Open dialog with category + date range filters */
@@ -317,7 +386,9 @@ public class CountyNewsActivity extends AppCompatActivity {
             Log.d(TAG, "parseRss returned items: " + newsItems.size());
             allItems = newsItems;
 
+            saveNewsToJson(allItems);
             loadFavoritesAndShow();
+
         }
     }
 
